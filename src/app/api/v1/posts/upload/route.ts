@@ -72,7 +72,7 @@ export async function POST(request: Request) {
             .insert(
                 uploaded.map((f) => ({
                     user_id: user.id,
-                    grid_id: gridId,
+                    grid_id: gridId as string,
                     url: f.publicUrl,
                 }))
             );
