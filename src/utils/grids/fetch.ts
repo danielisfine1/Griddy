@@ -31,12 +31,12 @@ export const fetchGrids = async ({ id }: { id: string }) => {
   const { data: { user }} = await supabase.auth.getUser();
 
   if (!user) {
-      return { data: null, error: { message: "User not found" } };
+    return { data: null, error: { message: "User not found" } };
   };
 
   const { data, error } = await supabase.rpc('get_grids_with_posts', {
     p_user_id: user.id,
-  }).eq('id', id);
+  });
 
   return { data, error } as { data: Grid[] | null, error: PostgrestError };
 

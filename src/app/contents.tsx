@@ -46,7 +46,7 @@ export const Home = () => {
     }, []);
 
     return (
-        <div className="w-full h-screen flex flex-row justify-center items-center text-4xl gap-10">
+        <div className="w-full h-screen flex flex-col md:flex-row justify-center items-center text-4xl gap-10">
 
             <div className="w-full flex flex-col gap-2 p-10">
                 <h1 className="font-xanh">GRIDDY</h1>

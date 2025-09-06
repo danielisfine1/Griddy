@@ -82,12 +82,12 @@ export const Dashboard = ({ grids }: { grids: Grid[] }) => {
 
             <a className="cursor-pointer text-2xl" onClick={handleAddNewGrid}>Add new grid</a>
 
-            <div className="w-full grid grid-cols-3 gap-10">
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-10">
                 {grids.map((grid: Grid) => {
                     return (
                         <a key={grid.id} className="border-1 border-black rounded-md flex flex-col justify-center items-center gap-5 p-10" href={`/grid/${grid.id}`}>
 
-                            <h3>{grid.name}</h3>
+                            <h3 className="text-2xl">{grid.name}</h3>
                             <p>{grid.posts.length} post{grid.posts.length === 1 ? "" : "s"}</p>
 
                             <div className="w-full grid grid-cols-3 gap-1">
