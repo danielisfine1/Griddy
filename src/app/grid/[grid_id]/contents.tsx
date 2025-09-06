@@ -4,13 +4,9 @@ import React, { useState, useMemo, ChangeEvent } from "react";
 import { Post } from "@/types/internal";
 import axios, { AxiosResponse } from "axios";
 import { createModal } from "@/utils/modalHelper";
-
 import { Post as PostComponent } from "@/components/Post";
-
 import { updateOrders } from "@/utils/grids/posts";
-
 import { useGrid } from "@/context/gridContext";
-
 import { Header } from "@/components/Header";
 
 /* dnd-kit */
@@ -18,6 +14,8 @@ import {
     DndContext,
     closestCenter,
     PointerSensor,
+    TouchSensor,
+    MouseSensor,
     useSensor,
     useSensors,
     DragStartEvent,
@@ -31,26 +29,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-type UploadedFile = {
-    fileName: string;
-    publicUrl: string;
-};
-
-type UploadSuccess = {
-    success: true;
-    files: UploadedFile[];
-};
-
-type UploadFailure = {
-    success: false;
-    message: string;
-};
-
+type UploadedFile = { fileName: string; publicUrl: string };
+type UploadSuccess = { success: true; files: UploadedFile[] };
+type UploadFailure = { success: false; message: string };
 type UploadResponse = UploadSuccess | UploadFailure;
 
 const Uploader = ({ grid_id }: { grid_id: string }) => {
     const [files, setFiles] = useState<File[]>([]);
-    const [uploading, setUploading] = useState<boolean>(false);
+    const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [uploaded, setUploaded] = useState<UploadedFile[] | null>(null);
 
@@ -73,7 +59,6 @@ const Uploader = ({ grid_id }: { grid_id: string }) => {
         setUploaded(null);
 
         const form = new FormData();
-
         files.forEach((f) => form.append("image", f, f.name));
         form.append("grid_id", grid_id);
 
@@ -137,7 +122,7 @@ const Uploader = ({ grid_id }: { grid_id: string }) => {
     );
 };
 
-/* Sortable item wrapper that works on mouse + touch (long-press) */
+/* Sortable item wrapper: attaches sensors, supports hold-to-drag on mobile */
 const SortablePost = ({
     post,
     index,
@@ -147,40 +132,31 @@ const SortablePost = ({
     index: number;
     activeId: string | null;
 }) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: post.id });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+        useSortable({ id: post.id });
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
         transition,
-        /* Prevent the page from scrolling while dragging on touch */
-        touchAction: "none",
-        /* Improve tapping without focus ring during drag */
+        touchAction: "none", // prevent scrolling while dragging
         WebkitTapHighlightColor: "transparent",
+        WebkitTouchCallout: "none",
+        userSelect: "none",
         opacity: isDragging ? 0.6 : 1,
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="contents"
-        >
+        <div ref={setNodeRef} style={style} className="relative">
             <PostComponent
                 /* custom props */
                 post={post}
                 index={index}
                 draggingId={activeId}
 
-                /* native attributes (your Post accepts button props) */
+                /* make the whole tile the drag handle */
+                {...attributes}
+                {...listeners}
+                onContextMenu={(e) => e.preventDefault()} // iOS long-press menu
                 type="button"
             />
         </div>
@@ -189,18 +165,17 @@ const SortablePost = ({
 
 export const GridContents = () => {
     const { grid, posts, setPosts } = useGrid();
+    const [activeId, setActiveId] = useState<string | null>(null);
 
-    /* Long-press to drag on mobile via PointerSensor with delay */
+    /* Sensors: Pointer (modern), Touch (fallback), Mouse */
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 180, // ms hold-to-drag
-                tolerance: 5, // px finger wiggle allowed during delay
+                delay: 300,     // hold-to-drag (ms)
+                tolerance: 6,   // allowed finger movement during hold (px)
             },
         })
     );
-
-    const [activeId, setActiveId] = useState<string | null>(null);
 
     const handleAddNewPost = async () => {
         await createModal(<Uploader grid_id={grid.id} />);
@@ -209,13 +184,11 @@ export const GridContents = () => {
     const items = useMemo(() => posts.map((p) => p.id), [posts]);
 
     const onDragStart = (event: DragStartEvent) => {
-        const { active } = event;
-        setActiveId(String(active.id));
+        setActiveId(String(event.active.id));
     };
 
     const onDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
-
         setActiveId(null);
 
         if (!over || active.id === over.id) return;
@@ -230,7 +203,7 @@ export const GridContents = () => {
         /* optimistic UI */
         setPosts(next);
 
-        /* persist new order */
+        /* persist */
         const withOrder = next.map((p, i) => ({ ...p, order: i + 1 }));
         const { error } = await updateOrders({ grid_id: grid.id, orders: withOrder });
 
@@ -240,7 +213,6 @@ export const GridContents = () => {
         }
     };
 
-    /* Optional: tighten gutters on small screens */
     const gridClass = useMemo(
         () => "grid grid-cols-3 gap-[2px] md:gap-[3px]",
         []

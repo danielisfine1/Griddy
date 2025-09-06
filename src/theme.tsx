@@ -12,7 +12,7 @@ export const theme = createTheme({
         },
         text: {
             primary: "#000000",
-            secondary: "#aaaaaa",
+            secondary: "#AAAAAA",
         },
         primary: {
             main: "#000000",
