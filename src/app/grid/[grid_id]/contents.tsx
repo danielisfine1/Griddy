@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useMemo, ChangeEvent } from "react";
+import React, { useState, useMemo, ChangeEvent } from "react";
 import { Post } from "@/types/internal";
 import axios, { AxiosResponse } from "axios";
 import { createModal } from "@/utils/modalHelper";
@@ -12,6 +12,24 @@ import { updateOrders } from "@/utils/grids/posts";
 import { useGrid } from "@/context/gridContext";
 
 import { Header } from "@/components/Header";
+
+/* dnd-kit */
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragStartEvent,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    useSortable,
+    rectSortingStrategy,
+    arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type UploadedFile = {
     fileName: string;
@@ -31,7 +49,6 @@ type UploadFailure = {
 type UploadResponse = UploadSuccess | UploadFailure;
 
 const Uploader = ({ grid_id }: { grid_id: string }) => {
-
     const [files, setFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -50,7 +67,6 @@ const Uploader = ({ grid_id }: { grid_id: string }) => {
     };
 
     const onUpload = async () => {
-
         if (files.length === 0 || uploading) return;
         setUploading(true);
         setError(null);
@@ -59,8 +75,7 @@ const Uploader = ({ grid_id }: { grid_id: string }) => {
         const form = new FormData();
 
         files.forEach((f) => form.append("image", f, f.name));
-
-        form.append('grid_id', grid_id);
+        form.append("grid_id", grid_id);
 
         try {
             const res: AxiosResponse<UploadResponse> = await axios.post(
@@ -75,19 +90,13 @@ const Uploader = ({ grid_id }: { grid_id: string }) => {
                 window.location.reload();
             } else {
                 setError(res.data.message);
-            };
-
+            }
         } catch (e) {
-
             console.log(e);
             setError("Upload failed. Please try again.");
-
         } finally {
-
             setUploading(false);
-
-        };
-
+        }
     };
 
     return (
@@ -128,92 +137,121 @@ const Uploader = ({ grid_id }: { grid_id: string }) => {
     );
 };
 
-export const GridContents = () => {
+/* Sortable item wrapper that works on mouse + touch (long-press) */
+const SortablePost = ({
+    post,
+    index,
+    activeId,
+}: {
+    post: Post;
+    index: number;
+    activeId: string | null;
+}) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: post.id });
 
+    const style: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        /* Prevent the page from scrolling while dragging on touch */
+        touchAction: "none",
+        /* Improve tapping without focus ring during drag */
+        WebkitTapHighlightColor: "transparent",
+        opacity: isDragging ? 0.6 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className="contents"
+        >
+            <PostComponent
+                /* custom props */
+                post={post}
+                index={index}
+                draggingId={activeId}
+
+                /* native attributes (your Post accepts button props) */
+                type="button"
+            />
+        </div>
+    );
+};
+
+export const GridContents = () => {
     const { grid, posts, setPosts } = useGrid();
 
-    const [draggingId, setDraggingId] = useState<string | null>(null);
-    const dragFromIndex = useRef<number | null>(null);
+    /* Long-press to drag on mobile via PointerSensor with delay */
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                delay: 180, // ms hold-to-drag
+                tolerance: 5, // px finger wiggle allowed during delay
+            },
+        })
+    );
+
+    const [activeId, setActiveId] = useState<string | null>(null);
 
     const handleAddNewPost = async () => {
         await createModal(<Uploader grid_id={grid.id} />);
     };
 
-    /* Reorder helper */
-    const reorder = (list: Post[], start: number, end: number) => {
-        if (start === end) return list;
-        const next = list.slice();
-        const [moved] = next.splice(start, 1);
-        next.splice(end, 0, moved);
-        return next;
+    const items = useMemo(() => posts.map((p) => p.id), [posts]);
+
+    const onDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+        setActiveId(String(active.id));
     };
 
-    /* Handlers */
-    const onDragStart = (e: React.DragEvent<HTMLButtonElement>) => {
-        const idx = Number(e.currentTarget.dataset.index);
-        dragFromIndex.current = idx;
-        setDraggingId(e.currentTarget.dataset.id || null);
-        /* allow move cursor */
-        e.dataTransfer.effectAllowed = "move";
-        /* needed for Firefox to initiate DnD */
-        e.dataTransfer.setData("text/plain", e.currentTarget.dataset.id || "");
-    };
+    const onDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
 
-    const onDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-    };
+        setActiveId(null);
 
-    const onDrop = (e: React.DragEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        const from = dragFromIndex.current;
-        const to = Number(e.currentTarget.dataset.index);
-        if (from == null || Number.isNaN(to)) {
-            setDraggingId(null);
-            dragFromIndex.current = null;
-            return;
-        }
-        setPosts((prev) => reorder(prev, from, to));
-        setDraggingId(null);
-        dragFromIndex.current = null;
-    };
+        if (!over || active.id === over.id) return;
 
-    const onDragEnd = async () => {
+        const oldIndex = posts.findIndex((p) => p.id === active.id);
+        const newIndex = posts.findIndex((p) => p.id === over.id);
+        if (oldIndex < 0 || newIndex < 0) return;
 
-        setDraggingId(null);
-        dragFromIndex.current = null;
-      
-        const prevPosts = [...posts];
-      
-        const withOrder = posts.map((p, i) => ({ ...p, order: i + 1 }));
-      
+        const prev = posts;
+        const next = arrayMove(posts, oldIndex, newIndex);
+
+        /* optimistic UI */
+        setPosts(next);
+
+        /* persist new order */
+        const withOrder = next.map((p, i) => ({ ...p, order: i + 1 }));
         const { error } = await updateOrders({ grid_id: grid.id, orders: withOrder });
-      
-        if (error) {
-          console.error("Update failed, reverting", error);
-          setPosts(prevPosts);
-        };
 
+        if (error) {
+            console.error("Update failed, reverting", error);
+            setPosts(prev);
+        }
     };
 
     /* Optional: tighten gutters on small screens */
     const gridClass = useMemo(
         () => "grid grid-cols-3 gap-[2px] md:gap-[3px]",
-    []);
+        []
+    );
 
     return (
         <div className="font-xanh w-full min-h-screen flex flex-col justify-start items-center gap-6 p-4">
-
             <Header
                 links={[
-                    {
-                        name: "Home",
-                        href: "/",
-                    },
-                    {
-                        name: "Sign out",
-                        href: "/signout",
-                    },
+                    { name: "Home", href: "/" },
+                    { name: "Sign out", href: "/signout" },
                 ]}
             />
 
@@ -228,30 +266,25 @@ export const GridContents = () => {
             </button>
 
             <div className="w-full">
-                <div className={gridClass}>
-                    {posts.map((post, index) => (
-                        <PostComponent
-                            key={post.id}
-                            
-                            /* custom props */
-                            post={post}
-                            index={index}
-                            draggingId={draggingId}
-                            
-                            /* native attributes */
-                            type="button"
-                            data-id={post.id}
-                            data-index={index}
-                            draggable
-                            
-                            /* event handlers */
-                            onDragStart={onDragStart}
-                            onDragOver={onDragOver}
-                            onDrop={onDrop}
-                            onDragEnd={onDragEnd}
-                        />
-                    ))}
-                </div>
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={onDragStart}
+                    onDragEnd={onDragEnd}
+                >
+                    <SortableContext items={items} strategy={rectSortingStrategy}>
+                        <div className={gridClass}>
+                            {posts.map((post, index) => (
+                                <SortablePost
+                                    key={post.id}
+                                    post={post}
+                                    index={index}
+                                    activeId={activeId}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
             </div>
         </div>
     );
