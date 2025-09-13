@@ -92,6 +92,7 @@ export const updateOrders = async ({ grid_id, orders }: updateOrdersArgs) => {
 };
 
 export const resetPost = async ({ id }: { id: string }) => {
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -138,13 +139,14 @@ export const resetPost = async ({ id }: { id: string }) => {
   // Reset edited_url to NULL in the database
   const { data, error: updateError } = await supabase
     .from("posts")
-    .update({ edited_url: null })
+    .update({ edited_url: null, brightness: 100, contrast: 100, saturation: 100, hue: 0, vignette_size: 0, vignette_sharpness: 0, sharpness: 0, structure: 0, lut: null })
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
     .single();
 
   if (updateError) {
+    console.log(updateError);
     return { data: null, error: updateError };
   }
 
