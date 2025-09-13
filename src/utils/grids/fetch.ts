@@ -13,7 +13,7 @@ export const fetchGrid = async ({ id }: { id: string }) => {
   const { data: { user }} = await supabase.auth.getUser();
 
   if (!user) {
-      return { data: null, error: { message: "User not found" } };
+    return { data: null, error: { message: "User not found" } };
   };
 
   const { data, error } = await supabase.rpc('get_grids_with_posts', {

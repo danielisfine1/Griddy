@@ -14,7 +14,7 @@ import { fetchGrid } from "@/utils/grids/fetch";
 import { createModal } from "@/utils/modalHelper";
 
 type PostProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    post: { id: string; url: string };
+    post: { id: string; url: string, edited_url: string | null };
     index: number;
     draggingId: string | null;
 };
@@ -76,7 +76,7 @@ export const Post: React.FC<PostProps> = ({
             >
                 <div className="relative w-full h-full">
                     <Image
-                        src={post.url}
+                        src={post.edited_url || post.url}
                         alt=""
                         fill
                         className="object-cover"
@@ -90,6 +90,9 @@ export const Post: React.FC<PostProps> = ({
                 open={open}
                 onClose={handleClose}
             >
+                <MenuItem onClick={() => {
+                    window.location.href = `/edit/${post.id}`
+                }}>Edit</MenuItem>
                 <MenuItem onClick={handleDelete}>Delete</MenuItem>
             </Menu>
         </>

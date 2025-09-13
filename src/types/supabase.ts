@@ -45,28 +45,58 @@ export type Database = {
       }
       posts: {
         Row: {
+          brightness: number
+          contrast: number
           created_at: string
+          edited_url: string | null
           grid_id: string
+          hue: number
           id: string
+          lut: string | null
           order: number
+          saturation: number
+          sharpness: number
+          structure: number
           url: string
           user_id: string
+          vignette_sharpness: number
+          vignette_size: number
         }
         Insert: {
+          brightness?: number
+          contrast?: number
           created_at?: string
+          edited_url?: string | null
           grid_id: string
+          hue?: number
           id?: string
+          lut?: string | null
           order?: number
+          saturation?: number
+          sharpness?: number
+          structure?: number
           url: string
           user_id: string
+          vignette_sharpness?: number
+          vignette_size?: number
         }
         Update: {
+          brightness?: number
+          contrast?: number
           created_at?: string
+          edited_url?: string | null
           grid_id?: string
+          hue?: number
           id?: string
+          lut?: string | null
           order?: number
+          saturation?: number
+          sharpness?: number
+          structure?: number
           url?: string
           user_id?: string
+          vignette_sharpness?: number
+          vignette_size?: number
         }
         Relationships: [
           {

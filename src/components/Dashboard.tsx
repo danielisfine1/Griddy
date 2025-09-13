@@ -94,7 +94,7 @@ export const Dashboard = ({ grids }: { grids: Grid[] }) => {
                                 {grid.posts.slice(0, 6).map((post, i) => (
                                     <div key={i} className="relative w-full h-24">
                                     <Image
-                                        src={post.url}
+                                        src={post.edited_url || post.url}
                                         alt={post.id}
                                         fill
                                         className="object-cover"

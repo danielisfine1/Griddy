@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from "@/utils/supabase/server";
 
+import { uploadPost } from '@/utils/uploadPost';
+
 export async function POST(request: Request) {
 
     const supabase = await createClient();
@@ -37,33 +39,20 @@ export async function POST(request: Request) {
 
         for (const file of files) {
 
-            const randomFileName = Math.random().toString(36).substring(2, 9);
-            const nameParts = file.name.split('.');
-            const fileExtension = nameParts.length > 1 ? nameParts.pop() as string : 'bin';
-            const fileName = `${user.id}/${randomFileName}.${fileExtension}`;
+            try {
 
-            const { error: uploadError } = await supabase.storage
-                .from('posts')
-                .upload(fileName, file, {
-                    upsert: true,
-                    contentType: file.type || 'application/octet-stream',
-                });
+                const { fileName, publicUrl } = await uploadPost({ supabase, user, file });
+                uploaded.push({ fileName, publicUrl: publicUrl });
 
-            if (uploadError) {
+            } catch (error) {
 
-                console.log(uploadError);
-
+                console.log(error);
                 return NextResponse.json(
                     { success: false, message: `Image upload failed for ${file.name}` },
                     { status: 500 }
                 );
+
             };
-
-            const { data } = supabase.storage
-                .from('posts')
-                .getPublicUrl(fileName);
-
-            uploaded.push({ fileName, publicUrl: data.publicUrl });
 
         };
         

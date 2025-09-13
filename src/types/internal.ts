@@ -7,5 +7,6 @@ export interface Grid {
 export interface Post {
     id: string;
     url: string;
+    edited_url: string;
     order: number;
 };
