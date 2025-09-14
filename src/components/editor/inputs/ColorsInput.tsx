@@ -75,8 +75,8 @@ export const ColorsInput = ({
                     <LinearInput
                         value={getVal(hueKey)}
                         onChange={(_, v) => setVal(hueKey, v as number)}
-                        min={0}
-                        max={1}
+                        min={-0.5}
+                        max={0.5}
                         step={0.001}
                     />
                 </div>
@@ -85,8 +85,8 @@ export const ColorsInput = ({
                     <LinearInput
                         value={getVal(satKey)}
                         onChange={(_, v) => setVal(satKey, v as number)}
-                        min={0}
-                        max={1}
+                        min={-0.5}
+                        max={0.5}
                         step={0.001}
                     />
                 </div>
@@ -95,8 +95,8 @@ export const ColorsInput = ({
                     <LinearInput
                         value={getVal(lightnessKey)}
                         onChange={(_, v) => setVal(lightnessKey, v as number)}
-                        min={-1}
-                        max={1}
+                        min={-0.5}
+                        max={0.5}
                         step={0.001}
                     />
                 </div>
