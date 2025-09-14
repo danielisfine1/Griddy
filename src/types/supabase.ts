@@ -45,15 +45,30 @@ export type Database = {
       }
       posts: {
         Row: {
+          blue_hue: number
+          blue_lightness: number
+          blue_saturation: number
           brightness: number
           contrast: number
           created_at: string
           edited_url: string | null
+          green_hue: number
+          green_lightness: number
+          green_saturation: number
           grid_id: string
           hue: number
           id: string
           lut: string | null
+          magenta_hue: number
+          magenta_lightness: number
+          magenta_saturation: number
+          orange_hue: number
+          orange_lightness: number
+          orange_saturation: number
           order: number
+          red_hue: number
+          red_lightness: number
+          red_saturation: number
           saturation: number
           sharpness: number
           structure: number
@@ -61,17 +76,35 @@ export type Database = {
           user_id: string
           vignette_sharpness: number
           vignette_size: number
+          yellow_hue: number
+          yellow_lightness: number
+          yellow_saturation: number
         }
         Insert: {
+          blue_hue?: number
+          blue_lightness?: number
+          blue_saturation?: number
           brightness?: number
           contrast?: number
           created_at?: string
           edited_url?: string | null
+          green_hue?: number
+          green_lightness?: number
+          green_saturation?: number
           grid_id: string
           hue?: number
           id?: string
           lut?: string | null
+          magenta_hue?: number
+          magenta_lightness?: number
+          magenta_saturation?: number
+          orange_hue?: number
+          orange_lightness?: number
+          orange_saturation?: number
           order?: number
+          red_hue?: number
+          red_lightness?: number
+          red_saturation?: number
           saturation?: number
           sharpness?: number
           structure?: number
@@ -79,17 +112,35 @@ export type Database = {
           user_id: string
           vignette_sharpness?: number
           vignette_size?: number
+          yellow_hue?: number
+          yellow_lightness?: number
+          yellow_saturation?: number
         }
         Update: {
+          blue_hue?: number
+          blue_lightness?: number
+          blue_saturation?: number
           brightness?: number
           contrast?: number
           created_at?: string
           edited_url?: string | null
+          green_hue?: number
+          green_lightness?: number
+          green_saturation?: number
           grid_id?: string
           hue?: number
           id?: string
           lut?: string | null
+          magenta_hue?: number
+          magenta_lightness?: number
+          magenta_saturation?: number
+          orange_hue?: number
+          orange_lightness?: number
+          orange_saturation?: number
           order?: number
+          red_hue?: number
+          red_lightness?: number
+          red_saturation?: number
           saturation?: number
           sharpness?: number
           structure?: number
@@ -97,6 +148,9 @@ export type Database = {
           user_id?: string
           vignette_sharpness?: number
           vignette_size?: number
+          yellow_hue?: number
+          yellow_lightness?: number
+          yellow_saturation?: number
         }
         Relationships: [
           {

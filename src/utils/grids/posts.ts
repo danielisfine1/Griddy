@@ -2,6 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server";
 
+import { base } from "@/components/editor/constants";
+
 export const deletePost = async ({ id }: { id: string }) => {
   const supabase = await createClient();
   const {
@@ -100,9 +102,9 @@ export const resetPost = async ({ id }: { id: string }) => {
 
   if (!user) {
     return { data: null, error: { message: "User not found" } };
-  }
+  };
 
-  // Fetch the post with edited_url
+  /* Fetch the post with edited_url */
   const { data: post, error: fetchError } = await supabase
     .from("posts")
     .select("id, edited_url")
@@ -112,34 +114,45 @@ export const resetPost = async ({ id }: { id: string }) => {
 
   if (fetchError || !post) {
     return { data: null, error: fetchError || { message: "Post not found" } };
-  }
+  };
 
-  // If there’s an edited_url, remove it from storage
+  /* If there’s an edited_url, remove it from storage */
+
   if (post.edited_url) {
+
     try {
+
       const url = new URL(post.edited_url);
       const pathname = url.pathname;
       const filePath = pathname.split("/storage/v1/object/public/posts/")[1];
 
       if (filePath) {
-        const { error: storageError } = await supabase.storage
-          .from("posts")
-          .remove([filePath]);
+
+        const { error: storageError } = await supabase.storage.from("posts").remove([filePath]);
 
         if (storageError) {
           return { data: null, error: storageError };
-        }
-      }
+        };
+
+      };
+
     } catch (err) {
+
       console.error("Invalid edited_url format", err);
       return { data: null, error: { message: "Invalid edited_url format" } };
-    }
-  }
 
-  // Reset edited_url to NULL in the database
+    };
+
+  };
+
+  /* Reset edited_url to NULL in the database */
+  
   const { data, error: updateError } = await supabase
     .from("posts")
-    .update({ edited_url: null, brightness: 100, contrast: 100, saturation: 100, hue: 0, vignette_size: 0, vignette_sharpness: 0, sharpness: 0, structure: 0, lut: null })
+    .update({
+      edited_url: null,
+      ...base
+    })
     .eq("id", id)
     .eq("user_id", user.id)
     .select()
@@ -148,7 +161,8 @@ export const resetPost = async ({ id }: { id: string }) => {
   if (updateError) {
     console.log(updateError);
     return { data: null, error: updateError };
-  }
+  };
 
   return { data, error: null };
+
 };

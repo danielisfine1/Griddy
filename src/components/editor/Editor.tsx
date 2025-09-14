@@ -2,7 +2,7 @@
 
 import { IconButton } from "@mui/material";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import { IoIosContrast, IoMdColorPalette } from "react-icons/io";
 import { BsBrightnessHigh } from "react-icons/bs";
@@ -13,6 +13,7 @@ import { BsVignette } from "react-icons/bs";
 import { MdDetails } from "react-icons/md";
 import { FaRegFloppyDisk } from "react-icons/fa6";
 import { VscDiscard } from "react-icons/vsc";
+import { PiRainbow } from "react-icons/pi";
 
 import { ImageProperties } from "@/components/editor/types";
 
@@ -28,17 +29,46 @@ import { RootState } from "@react-three/fiber";
 
 import { resetPost } from "@/utils/grids/posts";
 
+import { base } from "@/components/editor/constants";
+
+import { ColorsInput } from "@/components/editor/inputs/ColorsInput";
+
+export const colorsMatch = ({ base, imageProperties }: { base: ImageProperties, imageProperties: ImageProperties }) => {
+  
+    return (
+        base.red_hue === imageProperties.red_hue &&
+        base.red_saturation === imageProperties.red_saturation &&
+        base.red_lightness === imageProperties.red_lightness &&
+        base.orange_hue === imageProperties.orange_hue &&
+        base.orange_saturation === imageProperties.orange_saturation &&
+        base.orange_lightness === imageProperties.orange_lightness &&
+        base.yellow_hue === imageProperties.yellow_hue &&
+        base.yellow_saturation === imageProperties.yellow_saturation &&
+        base.yellow_lightness === imageProperties.yellow_lightness &&
+        base.green_hue === imageProperties.green_hue &&
+        base.green_saturation === imageProperties.green_saturation &&
+        base.green_lightness === imageProperties.green_lightness &&
+        base.blue_hue === imageProperties.blue_hue &&
+        base.blue_saturation === imageProperties.blue_saturation &&
+        base.blue_lightness === imageProperties.blue_lightness &&
+        base.magenta_hue === imageProperties.magenta_hue &&
+        base.magenta_saturation === imageProperties.magenta_saturation &&
+        base.magenta_lightness === imageProperties.magenta_lightness
+    )
+    
+};
+
 export const EditorOptions = (
     { imageProperties, setImageProperties, editsVisible, setEditsVisible, base, onSave, onReset }:
-        {
-            imageProperties: ImageProperties,
-            setImageProperties: React.Dispatch<React.SetStateAction<ImageProperties>>,
-            editsVisible: boolean,
-            setEditsVisible: React.Dispatch<React.SetStateAction<boolean>>,
-            base: ImageProperties,
-            onSave: () => void,
-            onReset: () => void
-        }
+    {
+        imageProperties: ImageProperties,
+        setImageProperties: React.Dispatch<React.SetStateAction<ImageProperties>>,
+        editsVisible: boolean,
+        setEditsVisible: React.Dispatch<React.SetStateAction<boolean>>,
+        base: ImageProperties,
+        onSave: () => void,
+        onReset: () => void
+    }
 ) => {
 
     const [active, setActive] = useState<string | null>(null);
@@ -79,7 +109,7 @@ export const EditorOptions = (
         {
             id: "details",
             name: "Details",
-            icon: <MdDetails className="text-gray-600" />,
+            icon: <MdDetails className={imageProperties.sharpness === base.sharpness && imageProperties.structure === base.structure ? "text-gray-600" : "text-blue-600"} />,
             editor: (
                 <div className="z-10 w-full flex flex-col items-center gap-5">
                     <div className="w-full flex flex-row items-center gap-5">
@@ -102,7 +132,7 @@ export const EditorOptions = (
         {
             id: "vignette",
             name: "Vignette",
-            icon: <BsVignette className="text-gray-600" />,
+            icon: <BsVignette className={imageProperties.vignette_size === base.vignette_size && imageProperties.vignette_sharpness === base.vignette_sharpness ? "text-gray-600" : "text-blue-600"} />,
             editor: (
                 <div className="z-10 w-full flex flex-col items-center gap-5">
                     <div className="w-full flex flex-row items-center gap-5">
@@ -127,6 +157,12 @@ export const EditorOptions = (
                     </div>
                 </div>
             )
+        },
+        {
+            id: "colors",
+            name: "Colors",
+            icon: <PiRainbow className={colorsMatch({base, imageProperties}) ? "text-gray-600" : "text-blue-600"} />,
+            editor: <ColorsInput imageProperties={imageProperties} setImageProperties={setImageProperties} />
         },
         {
             id: "lut",
@@ -196,22 +232,13 @@ export const EditorOptions = (
 
 };
 
-export const Editor = ({ image, postId, imageProperties: initialImageProperties }: { image: string, postId: string, imageProperties: ImageProperties }) => {
-
-    const base = {
-        brightness: 100,
-        contrast: 100,
-        saturation: 100,
-        hue: 0,
-        vignette_size: 0,
-        vignette_sharpness: 0,
-        sharpness: 0,
-        structure: 0,
-        lut: null
-    };
+export const Editor = ({ image, postId, imageProperties: initialImageProperties, row }: 
+    { image: string, postId: string, imageProperties: ImageProperties, row: { id: string, url: string, edited_url: string | null }[] }) => {
 
     const [imageProperties, setImageProperties] = useState<ImageProperties>(initialImageProperties);
     const [editsVisible, setEditsVisible] = useState<boolean>(true);
+
+    const [rowVisible, setRowVisible] = useState<boolean>(true);
 
     const canvasRef = useRef<RootState | null>(null);
 
@@ -273,14 +300,50 @@ export const Editor = ({ image, postId, imageProperties: initialImageProperties 
 
     };
 
+    useEffect(() => {
+        console.log('imageProperties changed', imageProperties);
+    }, [imageProperties]);
+
     return (
-        <div className="bg-gray-200 w-full h-screen flex flex-col items-center justify-center p-2">
+        <div className="bg-gray-200 w-full h-screen flex flex-col items-center justify-center p-2 gap-2">
 
             <ImagePreview
                 image={image}
                 imageProperties={editsVisible ? imageProperties : base}
+                fit={'contain'}
                 canvasRef={canvasRef as React.RefObject<RootState>}
             />
+
+            {
+                rowVisible && (
+                    <div className="w-full grid grid-cols-3 gap-2">
+                        {row.map((post) => {
+                            return (
+                                <a key={post.id} href={`/edit/${post.id}`} className="w-full aspect-[3/4] overflow-hidden">
+                                    {
+                                        post.id === postId ? (
+                                            <div className="w-full h-full object-cover">
+                                                <ImagePreview 
+                                                    image={image}
+                                                    imageProperties={imageProperties}
+                                                    fit="cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <img
+                                                src={post.edited_url || post.url}
+                                                alt=""
+                                                className="w-full h-full object-cover"
+                                            />
+                                        )
+                                    }
+                                </a>
+                            );
+                        })}
+                    </div>
+                )
+            }
+
 
             <div className="bg-white rounded-md w-full border-t-1 border-gray-200 mt-auto">
 

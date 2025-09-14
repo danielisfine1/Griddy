@@ -57,12 +57,28 @@ export const AddNewGrid = () => {
 
 };
 
+import { renameGrid } from "@/utils/grids/edit";
+import { EditableInput } from "@/components/EditableInput";
+
 export const Dashboard = ({ grids }: { grids: Grid[] }) => {
 
 
     const handleAddNewGrid = async () => {
 
         await createModal(<AddNewGrid />);
+
+    };
+
+    const handleRenameGrid = async ({ grid_id, name }: { grid_id: string, name: string }) => {
+
+        const { data, error } = await renameGrid({ grid_id, name });
+
+        if (error) {
+            console.error(error);
+            return { success: false };
+        } else {
+            return { success: true };
+        };
 
     };
 
@@ -85,12 +101,18 @@ export const Dashboard = ({ grids }: { grids: Grid[] }) => {
             <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-10">
                 {grids.map((grid: Grid) => {
                     return (
-                        <a key={grid.id} className="border-1 border-black rounded-md flex flex-col justify-center items-center gap-5 p-10" href={`/grid/${grid.id}`}>
+                        <div key={grid.id} className="border-1 border-black rounded-md flex flex-col justify-center items-center gap-5 p-10">
+                            
+                            <EditableInput
+                                initialValue={grid.name}
+                                element="h2"
+                                elementProps={{ className: "text-2xl" }}
+                                onSave={(value) => handleRenameGrid({ grid_id: grid.id, name: value })}
+                            />
 
-                            <h3 className="text-2xl">{grid.name}</h3>
                             <p>{grid.posts.length} post{grid.posts.length === 1 ? "" : "s"}</p>
 
-                            <div className="w-full grid grid-cols-3 gap-1">
+                            <a href={`/grid/${grid.id}`} className="w-full grid grid-cols-3 gap-1">
                                 {grid.posts.slice(0, 6).map((post, i) => (
                                     <div key={i} className="relative w-full h-24">
                                     <Image
@@ -101,9 +123,9 @@ export const Dashboard = ({ grids }: { grids: Grid[] }) => {
                                     />
                                     </div>
                                 ))}
-                            </div>
+                            </a>
 
-                        </a>
+                        </div>
                     );
                 })}
             </div>

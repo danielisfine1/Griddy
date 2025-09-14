@@ -2,12 +2,12 @@
 
 import { CSSProperties, useEffect, useState } from "react";
 import { ImageProperties } from "@/components/editor/types";
-import type { LUT } from "./luts";
-import { LUTFilter } from "./LUTFilter";
+import type { LUT } from "@/components/editor/luts";
+import { LUTFilter } from "@/components/editor/LUTFilter";
 
 import { RootState } from "@react-three/fiber";
 
-const formatPath = (lut: LUT) => {
+const formatPath = (lut: LUT | null) => {
 
     if (lut) {
         return `/lut/${lut}.cube`;
@@ -17,15 +17,23 @@ const formatPath = (lut: LUT) => {
 
 };
 
+export interface ImagePreviewImageProperties extends Omit<ImageProperties, "lut"> {
+    lut: string | null;
+};
+
+export interface ImagePreviewProps {
+    image: string;
+    imageProperties: ImagePreviewImageProperties;
+    fit: "cover" | "contain";
+    canvasRef?: React.RefObject<RootState>;
+};
+
 export const ImagePreview = ({
     image,
     imageProperties,
+    fit,
     canvasRef
-}: {
-    image: string;
-    imageProperties: ImageProperties;
-    canvasRef: React.RefObject<RootState>;
-}) => {
+}: ImagePreviewProps) => {
 
     const [aspectRatio, setAspectRatio] = useState<number | null>(null);
 
@@ -43,24 +51,21 @@ export const ImagePreview = ({
     const cropStyle: CSSProperties = {
         position: "relative",
         width: "100%",
+        height: "100%",
         overflow: "hidden",
         aspectRatio: aspectRatio ? `${aspectRatio}` : undefined,
     };
 
     return (
-        <div className="relative w-full flex items-center justify-center bg-gray-100">
+        <div className="relative w-full h-full flex items-center justify-center bg-gray-100">
             <div style={cropStyle}>
                 <LUTFilter
                     image={image}
-                    lut={formatPath(imageProperties.lut)}
-                    brightness={imageProperties.brightness}
-                    contrast={imageProperties.contrast}
-                    saturation={imageProperties.saturation}
-                    hue={imageProperties.hue}
-                    vignette_size={imageProperties.vignette_size}
-                    vignette_sharpness={imageProperties.vignette_sharpness}
-                    sharpness={imageProperties.sharpness}
-                    structure={imageProperties.structure}
+                    imageProperties={{
+                        ...imageProperties,
+                        lut: formatPath(imageProperties.lut as LUT | null)
+                    }}
+                    fit={fit}
                     canvasRef={canvasRef}
                 />
             </div>

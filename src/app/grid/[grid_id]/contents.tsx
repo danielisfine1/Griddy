@@ -4,7 +4,7 @@ import React, { useState, useMemo, ChangeEvent } from "react";
 import { Post } from "@/types/internal";
 import axios, { AxiosResponse } from "axios";
 import { createModal } from "@/utils/modalHelper";
-import { Post as PostComponent } from "@/components/Post";
+import { DraggablePost } from "@/components/Post";
 import { updateOrders } from "@/utils/grids/posts";
 import { useGrid } from "@/context/gridContext";
 import { Header } from "@/components/Header";
@@ -147,7 +147,7 @@ const SortablePost = ({
 
     return (
         <div ref={setNodeRef} style={style} className="relative">
-            <PostComponent
+            <DraggablePost
                 /* custom props */
                 post={post}
                 index={index}
